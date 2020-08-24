@@ -9,6 +9,8 @@ import org.tensorflow.lite.support.common.FileUtil;
 
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
+import java.util.Arrays;
+import java.util.List;
 
 public class TFLiteAndroidTest {
 
@@ -73,5 +75,20 @@ public class TFLiteAndroidTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Returns list of models (filenames with ext.) available in models folder.
+     *
+     * @return List of models or null in case of exception
+     */
+    private List<String> getListOfModels()
+    {
+        try {
+            return Arrays.asList(activity.getAssets().list("models"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
