@@ -2,6 +2,8 @@ package com.example.tfliteandroidapp.test;
 
 import android.app.Activity;
 
+import com.example.tfliteandroidapp.R;
+
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.gpu.GpuDelegate;
@@ -144,5 +146,14 @@ public class TFLiteAndroidTest {
             e.printStackTrace();
         }
         return null;
+    }
+    /**
+     * Splits string from array of datasets to label and url to dataset.
+     *
+     * @return Array of strings which contains label at index 0 and url at index 1.
+     */
+    private String[] getLabelAndURL(String str)
+    {
+        return str.split(" ");
     }
 }

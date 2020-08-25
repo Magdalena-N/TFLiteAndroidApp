@@ -1,3 +1,39 @@
 <resources>
     <string name="app_name">TFLiteAndroidApp</string>
+
+    <string-array name="datasets" translatable="false">
+        <item>leopards http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02128598</item>
+        <item>lions http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02129165</item>
+        <item>honeybee http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02208280</item>
+        <item>daisy http://image-net.org/api/text/imagenet.synset.geturls?wnid=n11939491</item>
+        <item>lemon http://image-net.org/api/text/imagenet.synset.geturls?wnid=n07749582</item>
+        <item>shark http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01484850</item>
+        <item>stingray http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01498041</item>
+        <item>mud_turtle http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01667114</item>
+        <item>iguana http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01677366</item>
+        <item>whiptail http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01685808</item>
+        <item>komodo_dragon http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01695060</item>
+        <item>green_mamba http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01749939</item>
+        <item>horned_viper http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01753488</item>
+        <item>scorpion http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01770393</item>
+        <item>tarantula http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01774750</item>
+        <item>snail http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01944390</item>
+        <item>jellyfish http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01910747</item>
+        <item>mongoose http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02137549</item>
+        <item>hyena http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02117135</item>
+        <item>arctic_fox http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02120079</item>
+        <item>miniature_poodle http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02113712</item>
+        <item>pekinese http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02086079</item>
+        <item>chihuahua http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02085620</item>
+        <item>crayfish http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01985128</item>
+        <item>hermit_crab http://image-net.org/api/text/imagenet.synset.geturls?wnid=n01986214</item>
+        <item>cockroach http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02233338</item>
+        <item>cricket http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02229544</item>
+        <item>grasshopper http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02226429</item>
+        <item>ant http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02219486</item>
+        <item>fly http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02190166</item>
+        <item>weevil http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02177972</item>
+        <item>ladybug http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02165456</item>
+        <item>meerkat http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02138441</item>
+    </string-array>
 </resources>
