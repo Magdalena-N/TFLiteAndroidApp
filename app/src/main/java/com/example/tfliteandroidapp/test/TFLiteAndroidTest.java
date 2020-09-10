@@ -1,6 +1,7 @@
 package com.example.tfliteandroidapp.test;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
 
 import com.example.tfliteandroidapp.R;
 
@@ -69,6 +70,43 @@ public class TFLiteAndroidTest {
         gpuDelegate = null;
         nnApiDelegate = null;
         tfliteOptions = new Interpreter.Options();
+    }
+
+    /**
+     * Main method which runs 330 inferences for each model.
+     * We have 33 datasets and from each dataset we get 10 randomly
+     * chosen images.
+     */
+    public void run()
+    {
+        List<String> models;
+        String[] dataSets;
+        Bitmap[] images;
+
+        models = getListOfModels();
+
+        if (models == null)
+            return;
+
+        dataSets = activity.getResources().getStringArray(R.array.datasets);
+
+        for (String model : models) {
+            initInterpreter(model);
+            prepareBuffers();
+
+            for (String dataSet : dataSets) {
+                /**
+                 * TODO
+                 * Get 10 images from dataSet
+                 */
+                for (Bitmap image : images) {
+                    /**
+                     * TODO
+                     * Run inferences and save results
+                     */
+                }
+            }
+        }
     }
 
     /**
