@@ -186,6 +186,28 @@ public class TFLiteAndroidTest {
     }
 
     /**
+     * Performs image loading, croping and resizing.
+     *
+     * @param bitmap Bitmap of image to recognize
+     * @return TensorImage for model's input
+     */
+    private TensorImage processImage(final Bitmap bitmap)
+    {
+        int cropSize;
+
+        inputImageBuffer.load(bitmap);
+
+        cropSize = Math.min(bitmap.getWidth(), bitmap.getHeight());
+        ImageProcessor imageProcessor =
+                new ImageProcessor.Builder()
+                        .add(new ResizeWithCropOrPadOp(cropSize, cropSize))
+                        .add(new ResizeOp(imageSizeY, imageSizeX, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
+                        .add(new NormalizeOp(imgMean, imgStd))
+                        .build();
+        return imageProcessor.process(inputImageBuffer);
+    }
+
+    /**
      * Returns list of models (filenames with ext.) available in models folder.
      *
      * @return List of models or null in case of exception
