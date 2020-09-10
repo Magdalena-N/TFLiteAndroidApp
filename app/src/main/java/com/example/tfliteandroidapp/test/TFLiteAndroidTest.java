@@ -1,9 +1,11 @@
 package com.example.tfliteandroidapp.test;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 
 import com.example.tfliteandroidapp.R;
+import com.opencsv.CSVWriter;
 
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
@@ -19,6 +21,7 @@ import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.MappedByteBuffer;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +73,8 @@ public class TFLiteAndroidTest {
 
     private float probMean = 0.0f, probStd;
 
+    /** Writer to file with output results*/
+    CSVWriter csvWriter;
 
     public TFLiteAndroidTest(Activity pA)
     {
@@ -97,6 +102,7 @@ public class TFLiteAndroidTest {
             return;
 
         dataSets = activity.getResources().getStringArray(R.array.datasets);
+        prepareWriter("results.csv");
 
         for (String model : models) {
             initInterpreter(model);
@@ -112,8 +118,14 @@ public class TFLiteAndroidTest {
                      * TODO
                      * Run inferences and save results
                      */
+                    //saveResult(model,TODO);
                 }
             }
+        }
+        try {
+            csvWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -221,6 +233,7 @@ public class TFLiteAndroidTest {
         }
         return null;
     }
+    
     /**
      * Splits string from array of datasets to label and url to dataset.
      *
@@ -229,5 +242,35 @@ public class TFLiteAndroidTest {
     private String[] getLabelAndURL(String str)
     {
         return str.split(" ");
+    }
+
+    /**
+     * Initiates CSVWriter, output file is located in
+     * /data/data/<package-name>/files/
+     *
+     * @param outputFileName Name of csv file with results.
+     */
+    private void prepareWriter(String outputFileName)
+    {
+        try {
+            csvWriter = new CSVWriter(new OutputStreamWriter(activity.openFileOutput(outputFileName, Context.MODE_PRIVATE)));
+            String[] header = { "ModelName", "Accuracy", "InferenceTime" };
+            csvWriter.writeNext(header);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Saves result of one inference in csv file
+     *
+     * @param modelName Name of tested model.
+     * @param accuracy accuracy of inference
+     * @param inferenceTime time of inference
+     */
+    private void saveResult(String modelName, String accuracy, String inferenceTime)
+    {
+        String[] str = {modelName, accuracy, inferenceTime};
+        csvWriter.writeNext(str);
     }
 }
