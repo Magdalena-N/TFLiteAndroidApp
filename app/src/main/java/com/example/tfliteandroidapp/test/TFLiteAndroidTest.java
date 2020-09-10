@@ -12,7 +12,10 @@ import org.tensorflow.lite.nnapi.NnApiDelegate;
 import org.tensorflow.lite.support.common.FileUtil;
 import org.tensorflow.lite.support.common.TensorProcessor;
 import org.tensorflow.lite.support.common.ops.NormalizeOp;
+import org.tensorflow.lite.support.image.ImageProcessor;
 import org.tensorflow.lite.support.image.TensorImage;
+import org.tensorflow.lite.support.image.ops.ResizeOp;
+import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.IOException;
@@ -62,6 +65,11 @@ public class TFLiteAndroidTest {
     private int imageSizeY, imageSizeX;
 
     private boolean isQuantized;
+
+    private float imgMean, imgStd;
+
+    private float probMean = 0.0f, probStd;
+
 
     public TFLiteAndroidTest(Activity pA)
     {
@@ -134,6 +142,17 @@ public class TFLiteAndroidTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        if (model.contains("quant")) {
+            probStd = 255.0f;
+            imgMean = 0.0f;
+            imgStd = 1.0f;
+        }
+        else {
+            probStd = 1.0f;
+            imgMean = 127.5f;
+            imgStd = 127.5f;
+        }
     }
 
     /**
@@ -163,12 +182,7 @@ public class TFLiteAndroidTest {
         inputImageBuffer = new TensorImage(imageDataType);
         outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape, probabilityDataType);
 
-        if (isQuantized)
-            probSTD = 255;
-        else
-            probSTD = 1;
-
-        probabilityProcessor = new TensorProcessor.Builder().add(new NormalizeOp(0.0f, probSTD)).build();
+        probabilityProcessor = new TensorProcessor.Builder().add(new NormalizeOp(probMean, probStd)).build();
     }
 
     /**
