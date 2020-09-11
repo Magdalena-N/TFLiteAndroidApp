@@ -113,13 +113,13 @@ public class TFLiteAndroidTest {
                  * TODO
                  * Get 10 images from dataSet
                  */
-                for (Bitmap image : images) {
+                //for (Bitmap image : images) {
                     /**
                      * TODO
                      * Run inferences and save results
                      */
                     //saveResult(model,TODO);
-                }
+                //}
             }
         }
         try {
@@ -272,5 +272,10 @@ public class TFLiteAndroidTest {
     {
         String[] str = {modelName, accuracy, inferenceTime};
         csvWriter.writeNext(str);
+    }
+
+    public void setDevice(Device device)
+    {
+        currentDevice = device;
     }
 }

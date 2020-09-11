@@ -36,4 +36,11 @@
         <item>ladybug http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02165456</item>
         <item>meerkat http://image-net.org/api/text/imagenet.synset.geturls?wnid=n02138441</item>
     </string-array>
+
+    <string name="device" translatable="false">Device:</string>
+    <string-array name="devices" translatable="false">
+        <item>CPU</item>
+        <item>GPU</item>
+        <item>NNAPI</item>
+    </string-array>
 </resources>
