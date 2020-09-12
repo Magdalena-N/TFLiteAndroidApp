@@ -3,6 +3,7 @@ package com.example.tfliteandroidapp.test;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import com.example.tfliteandroidapp.R;
 import com.opencsv.CSVWriter;
@@ -20,13 +21,21 @@ import org.tensorflow.lite.support.image.ops.ResizeOp;
 import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.MappedByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-public class TFLiteAndroidTest {
+public class TFLiteAndroidTest implements Runnable {
+
+    private static final int NUMBER_OF_IMAGE_SAMPLES = 10;
 
     public enum Device {
         CPU,
@@ -94,7 +103,7 @@ public class TFLiteAndroidTest {
     {
         List<String> models;
         String[] dataSets;
-        Bitmap[] images;
+        List<Bitmap> images;
 
         models = getListOfModels();
 
@@ -113,13 +122,15 @@ public class TFLiteAndroidTest {
                  * TODO
                  * Get 10 images from dataSet
                  */
-                //for (Bitmap image : images) {
+                String[] dataSetInfo = getLabelAndURL(dataSet);
+                images = getImagesBitmapsList(getImagesURLList(dataSetInfo[1]), NUMBER_OF_IMAGE_SAMPLES);
+//                for (Bitmap image : images) {
                     /**
                      * TODO
                      * Run inferences and save results
                      */
                     //saveResult(model,TODO);
-                //}
+//                }
             }
         }
         try {
@@ -259,6 +270,65 @@ public class TFLiteAndroidTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Returns a list of images urls from the data set URL.
+     * Returns null in case of an exception.
+     *
+     * @param datasetURLString URL of the data set.
+     * @return list of images URLs or null
+     */
+    private List<String> getImagesURLList(String datasetURLString){
+        ArrayList<String> imagesList = null;
+        String inputLine;
+        try {
+            URL datasetURL = new URL(datasetURLString);
+            try(BufferedReader input = new BufferedReader(new InputStreamReader(datasetURL.openStream()))){
+                imagesList = new ArrayList<>();
+                while((inputLine = input.readLine()) != null){
+                    imagesList.add(inputLine);
+                }
+            }
+            catch (IOException e){
+                /* pass */
+                e.printStackTrace();
+            }
+        } catch (MalformedURLException e){
+            /* pass */
+            e.printStackTrace();
+        }
+        return imagesList;
+    }
+
+    /**
+     * Returns a list of bitmaps randomly chosen from urls given.
+     * Returns null in case of an exception.
+     *
+     * @param imagesURLs list of URLs as Strings
+     * @param numOfImages number of images to get. In case numOfImages > imagesURLs.size()
+     *                   or numOfImages == 0 downloads the whole data set
+     * @return list of bitmaps or null
+     */
+    private List<Bitmap> getImagesBitmapsList(List<String> imagesURLs, int numOfImages){
+        ArrayList<Bitmap> imagesList = new ArrayList<>();
+        int imagesAdded = 0;
+        Collections.shuffle(imagesURLs);
+        for (String url : imagesURLs){
+            try {
+                URL imageURL = new URL(url);
+                Bitmap image = BitmapFactory.decodeStream(imageURL.openStream());
+                if (image != null){
+                    imagesList.add(image);
+                    if (++imagesAdded >= numOfImages)
+                        break;
+                }
+            }
+            catch (IOException e) {
+                /* pass */
+            }
+        }
+        return imagesList;
     }
 
     /**
