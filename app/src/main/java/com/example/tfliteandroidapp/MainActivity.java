@@ -22,6 +22,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         tfLiteAndroidTest = new TFLiteAndroidTest(this);
         deviceSpinner = findViewById(R.id.deviceSpinner);
         deviceSpinner.setOnItemSelectedListener(this);
+        Thread tfLiteThread = new Thread(tfLiteAndroidTest);
+        tfLiteThread.start();
     }
 
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
