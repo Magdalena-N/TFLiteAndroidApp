@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import com.example.tfliteandroidapp.MainActivity;
 import com.example.tfliteandroidapp.R;
 import com.opencsv.CSVWriter;
 
@@ -53,7 +54,7 @@ public class TFLiteAndroidTest implements Runnable {
     private final Interpreter.Options tfliteOptions;
 
     /** Activity in which the test is performed */
-    private Activity activity;
+    private MainActivity activity;
 
     /** Current device used for executing classification */
     private Device currentDevice;
@@ -85,7 +86,7 @@ public class TFLiteAndroidTest implements Runnable {
     /** Writer to file with output results*/
     CSVWriter csvWriter;
 
-    public TFLiteAndroidTest(Activity pA)
+    public TFLiteAndroidTest(MainActivity pA)
     {
         activity = pA;
         currentDevice = Device.CPU;
@@ -138,6 +139,14 @@ public class TFLiteAndroidTest implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        activity.runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        activity.enableSpinner();
+                    }
+                }
+        );
     }
 
     /**

@@ -14,19 +14,21 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private TFLiteAndroidTest tfLiteAndroidTest;
     private Spinner deviceSpinner;
+    private Thread tfLiteThread;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         tfLiteAndroidTest = new TFLiteAndroidTest(this);
         deviceSpinner = findViewById(R.id.deviceSpinner);
         deviceSpinner.setOnItemSelectedListener(this);
-        Thread tfLiteThread = new Thread(tfLiteAndroidTest);
-        tfLiteThread.start();
+        tfLiteThread = new Thread(tfLiteAndroidTest);
     }
 
-    public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+    public void onItemSelected(AdapterView<?> parent, View view, int pos, long id)
+    {
         if (parent == deviceSpinner) {
             Device device = Device.valueOf(parent.getItemAtPosition(pos).toString());
             tfLiteAndroidTest.setDevice(device);
@@ -35,6 +37,18 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     }
 
     @Override
-    public void onNothingSelected(AdapterView<?> parent) {
+    public void onNothingSelected(AdapterView<?> parent)
+    {
+    }
+
+    public void runTestsOnClick(View view)
+    {
+        deviceSpinner.setEnabled(false);
+        tfLiteThread.start();
+    }
+
+    public void enableSpinner()
+    {
+        deviceSpinner.setEnabled(true);
     }
 }
