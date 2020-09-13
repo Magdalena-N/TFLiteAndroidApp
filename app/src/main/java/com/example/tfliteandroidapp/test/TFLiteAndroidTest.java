@@ -274,7 +274,7 @@ public class TFLiteAndroidTest implements Runnable {
     {
         try {
             csvWriter = new CSVWriter(new OutputStreamWriter(activity.openFileOutput(outputFileName, Context.MODE_PRIVATE)));
-            String[] header = { "ModelName", "Accuracy", "InferenceTime" };
+            String[] header = { "ModelName", "Accuracy", "InferenceTime", "Recognition", "Label" };
             csvWriter.writeNext(header);
         } catch (IOException e) {
             e.printStackTrace();
@@ -346,10 +346,13 @@ public class TFLiteAndroidTest implements Runnable {
      * @param modelName Name of tested model.
      * @param accuracy accuracy of inference
      * @param inferenceTime time of inference
+     * @param recognition recognized label
+     * @param label correct answer
      */
-    private void saveResult(String modelName, String accuracy, String inferenceTime)
+    private void saveResult(String modelName, String accuracy, String inferenceTime, String recognition,
+                            String label)
     {
-        String[] str = {modelName, accuracy, inferenceTime};
+        String[] str = {modelName, accuracy, inferenceTime, recognition, label};
         csvWriter.writeNext(str);
     }
 
