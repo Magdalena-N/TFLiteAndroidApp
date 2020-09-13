@@ -47,6 +47,11 @@ public class TFLiteAndroidTest implements Runnable {
         GPU
     }
 
+    public enum UIUpdate {
+        PRINT_MSG,
+        ENABLE_SPINNER
+    }
+
     /** TFLite model loaded into memory */
     private MappedByteBuffer tfliteModel;
 
@@ -151,14 +156,7 @@ public class TFLiteAndroidTest implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        activity.runOnUiThread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        activity.enableSpinner();
-                    }
-                }
-        );
+        updateUI(UIUpdate.ENABLE_SPINNER, null);
     }
 
     /**
@@ -371,5 +369,31 @@ public class TFLiteAndroidTest implements Runnable {
     public void setDevice(Device device)
     {
         currentDevice = device;
+    }
+
+    /**
+     * Update UI from main thread
+     *
+     * @param uiUpdate enum which indicates what should be perform on UI thread.
+     * @param msg optional message
+     */
+    private void updateUI(UIUpdate uiUpdate, String msg)
+    {
+        activity.runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        switch (uiUpdate) {
+                            case PRINT_MSG:
+                                activity.updateLogs(msg);
+                                break;
+                            case ENABLE_SPINNER:
+                                activity.enableSpinner();
+                                break;
+                            default:
+                        }
+                    }
+                }
+        );
     }
 }
