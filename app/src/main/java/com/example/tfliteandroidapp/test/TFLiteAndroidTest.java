@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.SystemClock;
 
 import com.example.tfliteandroidapp.MainActivity;
 import com.example.tfliteandroidapp.R;
@@ -20,6 +21,7 @@ import org.tensorflow.lite.support.image.ImageProcessor;
 import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.image.ops.ResizeOp;
 import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp;
+import org.tensorflow.lite.support.label.TensorLabel;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.BufferedReader;
@@ -33,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class TFLiteAndroidTest implements Runnable {
 
@@ -77,8 +80,6 @@ public class TFLiteAndroidTest implements Runnable {
     /** Shape of input image */
     private int imageSizeY, imageSizeX;
 
-    private boolean isQuantized;
-
     private float imgMean, imgStd;
 
     private float probMean = 0.0f, probStd;
@@ -105,6 +106,8 @@ public class TFLiteAndroidTest implements Runnable {
         List<String> models;
         String[] dataSets;
         List<Bitmap> images;
+        List<String> labels = null;
+        long startTime, endTime;
 
         models = getListOfModels();
 
@@ -113,25 +116,34 @@ public class TFLiteAndroidTest implements Runnable {
 
         dataSets = activity.getResources().getStringArray(R.array.datasets);
         prepareWriter("results.csv");
+        try {
+            labels = FileUtil.loadLabels(activity, "labels.txt");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
 
         for (String model : models) {
             initInterpreter(model);
             prepareBuffers();
 
             for (String dataSet : dataSets) {
-                /**
-                 * TODO
-                 * Get 10 images from dataSet
-                 */
                 String[] dataSetInfo = getLabelAndURL(dataSet);
                 images = getImagesBitmapsList(getImagesURLList(dataSetInfo[1]), NUMBER_OF_IMAGE_SAMPLES);
-//                for (Bitmap image : images) {
-                    /**
-                     * TODO
-                     * Run inferences and save results
-                     */
-                    //saveResult(model,TODO);
-//                }
+                for (Bitmap image : images) {
+                    inputImageBuffer = processImage(image);
+                    startTime = SystemClock.uptimeMillis();
+                    interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
+                    endTime = SystemClock.uptimeMillis();
+
+                    Map<String, Float> labeledProbability =
+                        new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
+                                .getMapWithFloatValue();
+                    Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
+                        (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
+                    saveResult(model, max.getValue().toString(),
+                        Long.toString(endTime - startTime), max.getKey().toString(), dataSetInfo[0]);
+                }
             }
         }
         try {
