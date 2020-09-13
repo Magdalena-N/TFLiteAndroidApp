@@ -113,6 +113,7 @@ public class TFLiteAndroidTest implements Runnable {
         List<Bitmap> images;
         List<String> labels = null;
         long startTime, endTime;
+        String modelName;
 
         models = getListOfModels();
 
@@ -131,10 +132,13 @@ public class TFLiteAndroidTest implements Runnable {
         for (String model : models) {
             initInterpreter(model);
             prepareBuffers();
+            modelName = model.replace(".tflite","");
+            updateUI(UIUpdate.PRINT_MSG,"Model loaded: " + modelName);
 
             for (String dataSet : dataSets) {
                 String[] dataSetInfo = getLabelAndURL(dataSet);
                 images = getImagesBitmapsList(getImagesURLList(dataSetInfo[1]), NUMBER_OF_IMAGE_SAMPLES);
+                updateUI(UIUpdate.PRINT_MSG,"DataSet loaded: " + dataSetInfo[0]);
                 for (Bitmap image : images) {
                     inputImageBuffer = processImage(image);
                     startTime = SystemClock.uptimeMillis();
@@ -146,7 +150,7 @@ public class TFLiteAndroidTest implements Runnable {
                                 .getMapWithFloatValue();
                     Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
                         (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
-                    saveResult(model, max.getValue().toString(),
+                    saveResult(modelName, max.getValue().toString(),
                         Long.toString(endTime - startTime), max.getKey().toString(), dataSetInfo[0]);
                 }
             }
@@ -364,6 +368,8 @@ public class TFLiteAndroidTest implements Runnable {
     {
         String[] str = {modelName, accuracy, inferenceTime, recognition, label};
         csvWriter.writeNext(str);
+        updateUI(UIUpdate.PRINT_MSG, modelName + " Acc: " + accuracy + " Time: " + inferenceTime
+                 + " " + recognition + " " + label);
     }
 
     public void setDevice(Device device)

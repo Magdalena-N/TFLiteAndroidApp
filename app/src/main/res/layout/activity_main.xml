@@ -37,4 +37,15 @@
         android:text="Run tests"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/deviceSpinner" />
+
+    <TextView
+        android:id="@+id/logs"
+        android:layout_width="241dp"
+        android:layout_height="230dp"
+        android:layout_marginStart="99dp"
+        android:layout_marginTop="46dp"
+        android:text="Logs"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
