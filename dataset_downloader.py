@@ -5,15 +5,16 @@ import urllib.request
 
 
 def get_dataset_from_file(file_path, out_dir):
-    dataset_links = []
     with open(file_path) as dataset_file:
         for line in dataset_file:
+            dataset_links = []
             label = line.split(" ")[0]
             dataset_links.append(line.split(" ")[1])
             get_dataset_from_links(dataset_links, out_dir + os.path.sep + label)
 
 
 def get_dataset_from_links(links, out_dir):
+    i = 0
     for link in links:
         with urllib.request.urlopen(link) as page:
             page_content = page.read()
@@ -22,6 +23,8 @@ def get_dataset_from_links(links, out_dir):
                 # need to get rid of b prefix from casting byte to string
                 page = str(page)[1:].replace("'", "")
                 try:
+                    if "ge-trips" in page or "dogmillion" in page or "petzotics" in page:
+                        continue
                     if __if_exists(page):
                         print("Downloading %s" % page)
                         request = urllib.request.urlopen(page, timeout=60)
@@ -31,8 +34,11 @@ def get_dataset_from_links(links, out_dir):
                         if __is_image(bytes):
                             with open(out_dir + os.path.sep + page.split('/')[-1], "wb+") as file:
                                 file.write(bytes)
+                                i = i + 1
                         else:
                             print("The resource %s is not an image" % page)
+                        if i == 100:
+                            return
                     else:
                         print("The resource %s does not exist" % page)
                 except Exception:
