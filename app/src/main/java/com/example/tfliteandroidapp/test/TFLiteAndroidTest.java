@@ -34,12 +34,15 @@ import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 public class TFLiteAndroidTest implements Runnable {
 
     private static final int NUMBER_OF_IMAGE_SAMPLES = 10;
+    private static final int MAX_RESULTS = 5;
 
     public enum Device {
         CPU,
@@ -150,8 +153,8 @@ public class TFLiteAndroidTest implements Runnable {
                                 .getMapWithFloatValue();
                     Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
                         (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
-                    saveResult(modelName, max.getValue().toString(),
-                        Long.toString(endTime - startTime), max.getKey().toString(), dataSetInfo[0]);
+                    saveResult(modelName, dataSetInfo[0], Long.toString(endTime - startTime));
+                    saveKBestResults(labeledProbability);
                 }
             }
         }
@@ -288,7 +291,7 @@ public class TFLiteAndroidTest implements Runnable {
     {
         try {
             csvWriter = new CSVWriter(new OutputStreamWriter(activity.openFileOutput(outputFileName, Context.MODE_PRIVATE)));
-            String[] header = { "ModelName", "Accuracy", "InferenceTime", "Recognition", "Label" };
+            String[] header = { "ModelName", "Label", "InferenceTime", "Recognition", "Accuracy" };
             csvWriter.writeNext(header);
         } catch (IOException e) {
             e.printStackTrace();
@@ -355,21 +358,34 @@ public class TFLiteAndroidTest implements Runnable {
     }
 
     /**
+     * Saves top K results of inference in csv file
+     *
+     * @param labeledProbability results of inference.
+     */
+    private void saveKBestResults(Map<String, Float> labeledProbability) {
+        for (int i = 1; i <= 5; i++) {
+            Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
+                    (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
+            String[] str = {"", "", "", max.getKey(), Float.toString(max.getValue())};
+            csvWriter.writeNext(str);
+            updateUI(UIUpdate.PRINT_MSG, i + "." + max.getKey() + ": " + max.getValue());
+            labeledProbability.replace(max.getKey(), 0.0f);
+        }
+
+    }
+
+    /**
      * Saves result of one inference in csv file
      *
      * @param modelName Name of tested model.
-     * @param accuracy accuracy of inference
-     * @param inferenceTime time of inference
-     * @param recognition recognized label
      * @param label correct answer
+     * @param inferenceTime time of inference
      */
-    private void saveResult(String modelName, String accuracy, String inferenceTime, String recognition,
-                            String label)
+    private void saveResult(String modelName, String label, String inferenceTime)
     {
-        String[] str = {modelName, accuracy, inferenceTime, recognition, label};
+        String[] str = {modelName, label, inferenceTime, "", ""};
         csvWriter.writeNext(str);
-        updateUI(UIUpdate.PRINT_MSG, modelName + " Acc: " + accuracy + " Time: " + inferenceTime
-                 + " " + recognition + " " + label);
+        updateUI(UIUpdate.PRINT_MSG, modelName + " Time: " + inferenceTime + " Label: " + label);
     }
 
     public void setDevice(Device device)
