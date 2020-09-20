@@ -28,16 +28,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 public class TFLiteAndroidTest implements Runnable {
 
@@ -124,23 +123,23 @@ public class TFLiteAndroidTest implements Runnable {
             return;
 
         dataSets = activity.getResources().getStringArray(R.array.datasets);
-        prepareWriter("results.csv");
         try {
             labels = FileUtil.loadLabels(activity, "labels.txt");
         } catch (IOException e) {
             e.printStackTrace();
             return;
         }
+        prepareWriter("results.csv");
 
         for (String model : models) {
-            initInterpreter(model);
+            initInterpreter("models/" + model);
             prepareBuffers();
             modelName = model.replace(".tflite","");
             updateUI(UIUpdate.PRINT_MSG,"Model loaded: " + modelName);
 
             for (String dataSet : dataSets) {
                 String[] dataSetInfo = getLabelAndURL(dataSet);
-                images = getImagesBitmapsList(getImagesURLList(dataSetInfo[1]), NUMBER_OF_IMAGE_SAMPLES);
+                images = getImagesFromDir("datasets/" + dataSetInfo[0]);
                 updateUI(UIUpdate.PRINT_MSG,"DataSet loaded: " + dataSetInfo[0]);
                 for (Bitmap image : images) {
                     inputImageBuffer = processImage(image);
@@ -298,6 +297,8 @@ public class TFLiteAndroidTest implements Runnable {
         }
     }
 
+
+
     /**
      * Returns a list of images urls from the data set URL.
      * Returns null in case of an exception.
@@ -353,6 +354,32 @@ public class TFLiteAndroidTest implements Runnable {
             catch (IOException e) {
                 /* pass */
             }
+        }
+        return imagesList;
+    }
+
+    /**
+     * Returns a list of bitmaps randomly chosen from directory given.
+     * Returns null in case of an exception.
+     *
+     * @param path path to directory with images
+     * @return list of bitmaps or null
+     */
+    private List<Bitmap> getImagesFromDir(String path) {
+        ArrayList<Bitmap> imagesList = new ArrayList<>();
+        int i = 0;
+        try {
+            ArrayList<String> list =  new ArrayList<String>(Arrays.asList(activity.getAssets().list(path)));
+            Collections.shuffle(list);
+
+            for (String imageFile : list) {
+                imagesList.add(BitmapFactory.decodeStream(activity.getAssets().open(path + "/" + imageFile)));
+                i++;
+                if (i == NUMBER_OF_IMAGE_SAMPLES)
+                    break;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return imagesList;
     }
