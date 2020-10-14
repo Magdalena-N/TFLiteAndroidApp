@@ -152,7 +152,8 @@ public class TFLiteAndroidTest implements Runnable {
                                 .getMapWithFloatValue();
                     Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
                         (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
-                    saveResult(modelName, dataSetInfo[0], Long.toString(endTime - startTime));
+                    double t = (double)endTime - (double)startTime;
+                    saveResult(modelName, dataSetInfo[0], Double.toString(t / 1000));
                     saveKBestResults(labeledProbability);
                 }
             }
