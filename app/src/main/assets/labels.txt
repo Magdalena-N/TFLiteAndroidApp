@@ -34,11 +34,11 @@ tree frog
 tailed frog
 loggerhead
 leatherback turtle
-mud turtle
+mud_turtle
 terrapin
 box turtle
 banded gecko
-common iguana
+common_iguana
 American chameleon
 whiptail
 agama
@@ -47,7 +47,7 @@ alligator lizard
 Gila monster
 green lizard
 African chameleon
-Komodo dragon
+Komodo_dragon
 African crocodile
 American alligator
 triceratops
@@ -63,9 +63,9 @@ night snake
 boa constrictor
 rock python
 Indian cobra
-green mamba
+green_mamba
 sea snake
-horned viper
+horned_viper
 diamondback
 sidewinder
 trilobite
@@ -124,7 +124,7 @@ king crab
 American lobster
 spiny lobster
 crayfish
-hermit crab
+hermit_crab
 isopod
 white stork
 black stork
@@ -265,7 +265,7 @@ Brabancon griffon
 Pembroke
 Cardigan
 toy poodle
-miniature poodle
+miniature_poodle
 standard poodle
 Mexican hairless
 timber wolf
@@ -278,7 +278,7 @@ African hunting dog
 hyena
 red fox
 kit fox
-Arctic fox
+Arctic_fox
 grey fox
 tabby
 tiger cat
