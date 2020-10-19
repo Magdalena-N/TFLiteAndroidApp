@@ -1,6 +1,5 @@
 package com.example.tfliteandroidapp.test;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -28,7 +27,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.MappedByteBuffer;
@@ -94,6 +92,9 @@ public class TFLiteAndroidTest implements Runnable {
     /** Writer to file with output results*/
     CSVWriter csvWriter;
 
+    /** Name of directory with models inside assets/models*/
+    String modelsDir;
+
     public TFLiteAndroidTest(MainActivity pA)
     {
         activity = pA;
@@ -101,6 +102,7 @@ public class TFLiteAndroidTest implements Runnable {
         gpuDelegate = null;
         nnApiDelegate = null;
         tfliteOptions = new Interpreter.Options();
+        modelsDir = "mobilenet_v1";
     }
 
     /**
@@ -132,7 +134,7 @@ public class TFLiteAndroidTest implements Runnable {
         prepareWriter("results.csv");
 
         for (String model : models) {
-            initInterpreter("models/" + model);
+            initInterpreter("models/" + modelsDir + "/" + model);
             prepareBuffers();
             modelName = model.replace(".tflite","");
             updateUI(UIUpdate.PRINT_MSG,"Model loaded: " + modelName);
@@ -227,7 +229,7 @@ public class TFLiteAndroidTest implements Runnable {
         imageDataType = interpreter.getInputTensor(0).dataType();
         probabilityShape = interpreter.getOutputTensor(0).shape();
         probabilityDataType = interpreter.getOutputTensor(0).dataType();
-
+        System.out.println(imageDataType);
         inputImageBuffer = new TensorImage(imageDataType);
         outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape, probabilityDataType);
 
@@ -264,7 +266,7 @@ public class TFLiteAndroidTest implements Runnable {
     private List<String> getListOfModels()
     {
         try {
-            return Arrays.asList(activity.getAssets().list("models"));
+            return Arrays.asList(activity.getAssets().list("models/" + modelsDir));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -421,6 +423,10 @@ public class TFLiteAndroidTest implements Runnable {
         currentDevice = device;
     }
 
+    public void setVersion(String v) {
+        modelsDir = v;
+    }
+
     /**
      * Update UI from main thread
      *
@@ -438,7 +444,7 @@ public class TFLiteAndroidTest implements Runnable {
                                 activity.updateLogs(msg);
                                 break;
                             case ENABLE_SPINNER:
-                                activity.enableSpinner();
+                                activity.enableSpinners();
                                 break;
                             default:
                         }

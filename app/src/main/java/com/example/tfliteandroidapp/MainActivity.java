@@ -18,6 +18,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 
     private TFLiteAndroidTest tfLiteAndroidTest;
     private Spinner deviceSpinner;
+    private Spinner versionSpinner;
     private Thread tfLiteThread;
     private final int MAX_LOGS = 10;
     private ArrayList<String> logs;
@@ -30,6 +31,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         tfLiteAndroidTest = new TFLiteAndroidTest(this);
         deviceSpinner = findViewById(R.id.deviceSpinner);
         deviceSpinner.setOnItemSelectedListener(this);
+        versionSpinner = findViewById(R.id.versionSpinner);
+        versionSpinner.setOnItemSelectedListener(this);
         tfLiteThread = new Thread(tfLiteAndroidTest);
         logs = new ArrayList<String>();
     }
@@ -39,6 +42,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         if (parent == deviceSpinner) {
             Device device = Device.valueOf(parent.getItemAtPosition(pos).toString());
             tfLiteAndroidTest.setDevice(device);
+        } else if (parent == versionSpinner) {
+            String version = parent.getItemAtPosition(pos).toString();
+            tfLiteAndroidTest.setVersion(version);
         }
 
     }
@@ -51,13 +57,15 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     public void runTestsOnClick(View view)
     {
         deviceSpinner.setEnabled(false);
+        versionSpinner.setEnabled(false);
         updateLogs("Tests start");
         tfLiteThread.start();
     }
 
-    public void enableSpinner()
+    public void enableSpinners()
     {
         deviceSpinner.setEnabled(true);
+        versionSpinner.setEnabled(true);
     }
 
     public void updateLogs(String log)
