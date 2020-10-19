@@ -59,7 +59,7 @@ public class TFLiteAndroidTest implements Runnable {
     private Interpreter interpreter;
 
     /** Options of interpreter */
-    private final Interpreter.Options tfliteOptions;
+    private Interpreter.Options tfliteOptions;
 
     /** Activity in which the test is performed */
     private MainActivity activity;
@@ -134,6 +134,10 @@ public class TFLiteAndroidTest implements Runnable {
         prepareWriter("results.csv");
 
         for (String model : models) {
+            if (currentDevice == Device.GPU && model.contains("quant")) {
+                updateUI(UIUpdate.PRINT_MSG,"GPU doesn't support quantized models");
+                continue;
+            }
             initInterpreter("models/" + modelsDir + "/" + model);
             prepareBuffers();
             modelName = model.replace(".tflite","");
@@ -175,6 +179,7 @@ public class TFLiteAndroidTest implements Runnable {
      */
     private void initInterpreter(String model)
     {
+        tfliteOptions = new Interpreter.Options();
         switch (currentDevice) {
             case GPU:
                 gpuDelegate = new GpuDelegate();
@@ -189,6 +194,7 @@ public class TFLiteAndroidTest implements Runnable {
         }
         try {
             tfliteModel = FileUtil.loadMappedFile(activity, model);
+            System.out.println(model);
             interpreter = new Interpreter(tfliteModel, tfliteOptions);
         } catch (IOException e) {
             e.printStackTrace();
