@@ -49,7 +49,7 @@ public class TFLiteAndroidTest implements Runnable {
 
     public enum UIUpdate {
         PRINT_MSG,
-        ENABLE_SPINNER
+        ENABLE_UI
     }
 
     /** TFLite model loaded into memory */
@@ -131,7 +131,7 @@ public class TFLiteAndroidTest implements Runnable {
             e.printStackTrace();
             return;
         }
-        prepareWriter("results.csv");
+        prepareWriter("results_" + modelsDir + "_"+ currentDevice +".csv");
 
         for (String model : models) {
             if (currentDevice == Device.GPU && model.contains("quant")) {
@@ -150,17 +150,22 @@ public class TFLiteAndroidTest implements Runnable {
                 for (Bitmap image : images) {
                     inputImageBuffer = processImage(image);
                     startTime = SystemClock.uptimeMillis();
-                    interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
-                    endTime = SystemClock.uptimeMillis();
+                    try{
+                        interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
+                        endTime = SystemClock.uptimeMillis();
 
-                    Map<String, Float> labeledProbability =
-                        new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
-                                .getMapWithFloatValue();
-                    Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
-                        (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
-                    double t = (double)endTime - (double)startTime;
-                    saveResult(modelName, dataSetInfo[0], Double.toString(t / 1000));
-                    saveKBestResults(labeledProbability);
+                        Map<String, Float> labeledProbability =
+                                new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
+                                        .getMapWithFloatValue();
+                        Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
+                                (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
+                        double t = (double)endTime - (double)startTime;
+                        saveResult(modelName, dataSetInfo[0], Double.toString(t / 1000));
+                        saveKBestResults(labeledProbability);
+                    }
+                    catch (Exception e){
+                        saveResult(modelName, dataSetInfo[0], "Model did not complete the inference");
+                    }
                 }
             }
         }
@@ -169,7 +174,8 @@ public class TFLiteAndroidTest implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        updateUI(UIUpdate.ENABLE_SPINNER, null);
+        updateUI(UIUpdate.PRINT_MSG, "DONE");
+        updateUI(UIUpdate.ENABLE_UI, null);
     }
 
     /**
@@ -449,8 +455,8 @@ public class TFLiteAndroidTest implements Runnable {
                             case PRINT_MSG:
                                 activity.updateLogs(msg);
                                 break;
-                            case ENABLE_SPINNER:
-                                activity.enableSpinners();
+                            case ENABLE_UI:
+                                activity.enableUI();
                                 break;
                             default:
                         }

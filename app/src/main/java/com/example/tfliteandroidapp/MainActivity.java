@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
@@ -19,6 +20,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private TFLiteAndroidTest tfLiteAndroidTest;
     private Spinner deviceSpinner;
     private Spinner versionSpinner;
+    private Button startButton;
     private Thread tfLiteThread;
     private final int MAX_LOGS = 10;
     private ArrayList<String> logs;
@@ -33,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         deviceSpinner.setOnItemSelectedListener(this);
         versionSpinner = findViewById(R.id.versionSpinner);
         versionSpinner.setOnItemSelectedListener(this);
-        tfLiteThread = new Thread(tfLiteAndroidTest);
+        startButton= findViewById(R.id.button);
         logs = new ArrayList<String>();
     }
 
@@ -58,14 +60,17 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     {
         deviceSpinner.setEnabled(false);
         versionSpinner.setEnabled(false);
+        startButton.setEnabled(false);
         updateLogs("Tests start");
+        tfLiteThread = new Thread(tfLiteAndroidTest);
         tfLiteThread.start();
     }
 
-    public void enableSpinners()
+    public void enableUI()
     {
         deviceSpinner.setEnabled(true);
         versionSpinner.setEnabled(true);
+        startButton.setEnabled(true);
     }
 
     public void updateLogs(String log)
