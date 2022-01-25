@@ -20,6 +20,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private TFLiteAndroidTest tfLiteAndroidTest;
     private Spinner deviceSpinner;
     private Spinner versionSpinner;
+    private Spinner batchSizeSpinner;
     private Button startButton;
     private Thread tfLiteThread;
     private final int MAX_LOGS = 10;
@@ -35,6 +36,8 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         deviceSpinner.setOnItemSelectedListener(this);
         versionSpinner = findViewById(R.id.versionSpinner);
         versionSpinner.setOnItemSelectedListener(this);
+        batchSizeSpinner = findViewById(R.id.batchSizeSpinner);
+        batchSizeSpinner.setOnItemSelectedListener(this);
         startButton= findViewById(R.id.button);
         logs = new ArrayList<String>();
     }
@@ -47,6 +50,9 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         } else if (parent == versionSpinner) {
             String version = parent.getItemAtPosition(pos).toString();
             tfLiteAndroidTest.setVersion(version);
+        } else if (parent == batchSizeSpinner) {
+            String batchSize = parent.getItemAtPosition(pos).toString();
+            tfLiteAndroidTest.setBatchSize(Integer.parseInt(batchSize));
         }
 
     }
