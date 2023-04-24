@@ -7,6 +7,27 @@
     tools:context=".MainActivity">
 
     <Spinner
+        android:id="@+id/batchSizeSpinner"
+        android:layout_width="160dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="160dp"
+        android:layout_marginTop="152dp"
+        android:entries="@array/batchSize"
+        android:prompt="@string/batchSize"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="152dp"
+        android:text="batch size:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Spinner
         android:id="@+id/deviceSpinner"
         android:layout_width="160dp"
         android:layout_height="24dp"
@@ -31,8 +52,8 @@
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="99dp"
-        android:layout_marginTop="65dp"
+        android:layout_marginStart="96dp"
+        android:layout_marginTop="112dp"
         android:onClick="runTestsOnClick"
         android:text="Run tests"
         app:layout_constraintStart_toStartOf="parent"

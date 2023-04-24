@@ -50,4 +50,14 @@
         <item>mobilenet_v2</item>
         <item>mobilenet_v3</item>
     </string-array>
+
+    <string name="batchSize" translatable="false">Version:</string>
+    <string-array name="batchSize" translatable="false">
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>
+        <item>8</item>
+        <item>16</item>
+        <item>32</item>
+    </string-array>
 </resources>

@@ -29,6 +29,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,8 +40,9 @@ import java.util.Map;
 
 public class TFLiteAndroidTest implements Runnable {
 
-    private static final int NUMBER_OF_IMAGE_SAMPLES = 10;
+    private static final int NUMBER_OF_IMAGE_SAMPLES = 1;
     private static final int MAX_RESULTS = 5;
+    private int i;
 
     public enum Device {
         CPU,
@@ -74,6 +77,7 @@ public class TFLiteAndroidTest implements Runnable {
     private NnApiDelegate nnApiDelegate;
 
     /** Input image TensorBuffer of current interpreter*/
+    private TensorImage[] inputImageBuffers;
     private TensorImage inputImageBuffer;
 
     /** Output probability TensorBuffer of current interpreter*/
@@ -85,6 +89,8 @@ public class TFLiteAndroidTest implements Runnable {
     /** Shape of input image */
     private int imageSizeY, imageSizeX;
 
+    private int batchSize;
+
     private float imgMean, imgStd;
 
     private float probMean = 0.0f, probStd;
@@ -95,6 +101,8 @@ public class TFLiteAndroidTest implements Runnable {
     /** Name of directory with models inside assets/models*/
     String modelsDir;
 
+    String baseDir;
+
     public TFLiteAndroidTest(MainActivity pA)
     {
         activity = pA;
@@ -103,6 +111,8 @@ public class TFLiteAndroidTest implements Runnable {
         nnApiDelegate = null;
         tfliteOptions = new Interpreter.Options();
         modelsDir = "mobilenet_v1";
+        batchSize = 2;
+        baseDir = "models/";
     }
 
     /**
@@ -118,6 +128,9 @@ public class TFLiteAndroidTest implements Runnable {
         List<String> labels = null;
         long startTime, endTime;
         String modelName;
+        int i, j;
+        ByteBuffer inputBuffer;
+        inputImageBuffers = new TensorImage[batchSize];
 
         models = getListOfModels();
 
@@ -131,40 +144,63 @@ public class TFLiteAndroidTest implements Runnable {
             e.printStackTrace();
             return;
         }
-        prepareWriter("results_" + modelsDir + "_"+ currentDevice +".csv");
+        if (batchSize == 1)
+            prepareWriter("results_" + modelsDir + "_" + currentDevice + ".csv");
+        else
+            prepareWriter("results_" + modelsDir + "_" + currentDevice + "_bs" + batchSize + ".csv");
 
         for (String model : models) {
             if (currentDevice == Device.GPU && model.contains("quant")) {
                 updateUI(UIUpdate.PRINT_MSG,"GPU doesn't support quantized models");
                 continue;
             }
-            initInterpreter("models/" + modelsDir + "/" + model);
+            if (model.contains("edgetpu") && batchSize > 1)
+                continue;
+            initInterpreter(baseDir + modelsDir + "/" + model);
             prepareBuffers();
             modelName = model.replace(".tflite","");
             updateUI(UIUpdate.PRINT_MSG,"Model loaded: " + modelName);
 
+            dataSets = Arrays.copyOfRange(dataSets, 0, 1);
             for (String dataSet : dataSets) {
                 String[] dataSetInfo = getLabelAndURL(dataSet);
                 images = getImagesFromDir("datasets/" + dataSetInfo[0]);
                 updateUI(UIUpdate.PRINT_MSG,"DataSet loaded: " + dataSetInfo[0]);
-                for (Bitmap image : images) {
+//                for (i = 0; i < images.size(); i += batchSize) {
+                for(Bitmap image: images){
+
                     inputImageBuffer = processImage(image);
+//                    processImage(images.subList(i, i + batchSize).toArray());
+//                    inputBuffer = ByteBuffer.allocate(inputImageBuffers[0].getBuffer().capacity()*batchSize);
+//                    for (j = 0; j < batchSize; j++)
+//                        inputBuffer.put(inputImageBuffers[j].getBuffer());
+//                    inputBuffer.order(ByteOrder.nativeOrder());
                     startTime = SystemClock.uptimeMillis();
                     try{
                         interpreter.run(inputImageBuffer.getBuffer(), outputProbabilityBuffer.getBuffer().rewind());
                         endTime = SystemClock.uptimeMillis();
-
-                        Map<String, Float> labeledProbability =
-                                new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
-                                        .getMapWithFloatValue();
-                        Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
-                                (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
+                        
                         double t = (double)endTime - (double)startTime;
-                        saveResult(modelName, dataSetInfo[0], Double.toString(t / 1000));
-                        saveKBestResults(labeledProbability);
+                        if (batchSize == 1) {
+                            Map<String, Float> labeledProbability =
+                                    new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
+                                            .getMapWithFloatValue();
+                            Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
+                                    (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
+                            saveKBestResults(labeledProbability);
+                        } else {
+                            Map<String, Float> labeledProbability =
+                                    new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer))
+                                            .getMapWithFloatValue();
+                            Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(),
+                                    (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
+                            saveKBestResults(labeledProbability);
+//                            saveKDummyResults();
+                        }
                     }
                     catch (Exception e){
                         saveResult(modelName, dataSetInfo[0], "Model did not complete the inference");
+                        e.printStackTrace();
                     }
                 }
             }
@@ -236,6 +272,8 @@ public class TFLiteAndroidTest implements Runnable {
         float probSTD;
 
         imageShape = interpreter.getInputTensor(0).shape();
+        imageShape[0] = batchSize;
+//        interpreter.resizeInput(0 , imageShape);
         imageSizeY = imageShape[1];
         imageSizeX = imageShape[2];
         imageDataType = interpreter.getInputTensor(0).dataType();
@@ -243,17 +281,15 @@ public class TFLiteAndroidTest implements Runnable {
         probabilityDataType = interpreter.getOutputTensor(0).dataType();
         System.out.println(imageDataType);
         inputImageBuffer = new TensorImage(imageDataType);
+//        for (int i = 0; i < batchSize; i++)
+//            inputImageBuffers[i] = new TensorImage(imageDataType);
+//
+//        probabilityShape[0] *= batchSize;
         outputProbabilityBuffer = TensorBuffer.createFixedSize(probabilityShape, probabilityDataType);
 
         probabilityProcessor = new TensorProcessor.Builder().add(new NormalizeOp(probMean, probStd)).build();
     }
 
-    /**
-     * Performs image loading, croping and resizing.
-     *
-     * @param bitmap Bitmap of image to recognize
-     * @return TensorImage for model's input
-     */
     private TensorImage processImage(final Bitmap bitmap)
     {
         int cropSize;
@@ -271,6 +307,31 @@ public class TFLiteAndroidTest implements Runnable {
     }
 
     /**
+     * Performs image loading, croping and resizing.
+     *
+     * @param bitmaps Bitmap of image to recognize
+     * @return TensorImage for model's input
+     */
+    private void processImage(final Object[] bitmaps)
+    {
+        int cropSize, i;
+        Bitmap bitmap;
+        for(i = 0; i < batchSize; i++) {
+            bitmap = (Bitmap) bitmaps[i];
+            inputImageBuffers[i].load(bitmap);
+            cropSize = Math.min(bitmap.getWidth(), bitmap.getHeight());
+            ImageProcessor imageProcessor =
+                    new ImageProcessor.Builder()
+                            .add(new ResizeWithCropOrPadOp(cropSize, cropSize))
+                            .add(new ResizeOp(imageSizeY, imageSizeX, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
+                            .add(new NormalizeOp(imgMean, imgStd))
+                            .build();
+
+            inputImageBuffers[i] = imageProcessor.process(inputImageBuffers[i]);
+        }
+    }
+
+    /**
      * Returns list of models (filenames with ext.) available in models folder.
      *
      * @return List of models or null in case of exception
@@ -278,7 +339,7 @@ public class TFLiteAndroidTest implements Runnable {
     private List<String> getListOfModels()
     {
         try {
-            return Arrays.asList(activity.getAssets().list("models/" + modelsDir));
+            return Arrays.asList(activity.getAssets().list(baseDir + modelsDir));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -383,6 +444,20 @@ public class TFLiteAndroidTest implements Runnable {
     private List<Bitmap> getImagesFromDir(String path) {
         ArrayList<Bitmap> imagesList = new ArrayList<>();
         int i = 0;
+        int numSamples = NUMBER_OF_IMAGE_SAMPLES;
+
+        switch (batchSize) {
+            case 4:
+                numSamples = 12;
+                break;
+            case 8:
+            case 16:
+                numSamples = 16;
+                break;
+            case 32:
+                numSamples = 32;
+                break;
+        }
         try {
             ArrayList<String> list =  new ArrayList<String>(Arrays.asList(activity.getAssets().list(path)));
             Collections.shuffle(list);
@@ -390,7 +465,7 @@ public class TFLiteAndroidTest implements Runnable {
             for (String imageFile : list) {
                 imagesList.add(BitmapFactory.decodeStream(activity.getAssets().open(path + "/" + imageFile)));
                 i++;
-                if (i == NUMBER_OF_IMAGE_SAMPLES)
+                if (i == numSamples)
                     break;
             }
         } catch (IOException e) {
@@ -412,6 +487,15 @@ public class TFLiteAndroidTest implements Runnable {
             csvWriter.writeNext(str);
             updateUI(UIUpdate.PRINT_MSG, i + "." + max.getKey() + ": " + max.getValue());
             labeledProbability.replace(max.getKey(), 0.0f);
+        }
+
+    }
+
+    private void saveKDummyResults() {
+        for (int i = 1; i <= 5; i++) {
+            String[] str = {"", "", "", "", ""};
+            csvWriter.writeNext(str);
+            updateUI(UIUpdate.PRINT_MSG, i + "." + "" + ": " + "");
         }
 
     }
@@ -439,6 +523,14 @@ public class TFLiteAndroidTest implements Runnable {
         modelsDir = v;
     }
 
+    public void setBatchSize(int bS) {
+        batchSize = bS;
+
+        if (batchSize > 1)
+            baseDir = "models/converted_models_batch/";
+        else
+            baseDir = "models/converted_models_batch/";
+    }
     /**
      * Update UI from main thread
      *
