@@ -1,21 +1,40 @@
-apply plugin: 'com.android.application'
+plugins{
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
     buildToolsVersion "30.0.0"
 
     defaultConfig {
         applicationId "com.example.tfliteandroidapp"
         minSdkVersion 24
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        debug {
+            keyAlias = "debug"
+            keyPassword = "classification"
+            storePassword = "classification"
+            storeFile rootProject.file("signing/debug.jks")
+        }
+        release {
+            keyAlias = "debug"
+            keyPassword = "classification"
+            storePassword = "classification"
+            storeFile rootProject.file("signing/debug.jks")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -42,4 +61,7 @@ dependencies {
     implementation 'org.tensorflow:tensorflow-lite-gpu:0.0.0-nightly'
     implementation 'org.tensorflow:tensorflow-lite-support:0.0.0-nightly'
     implementation group: 'com.opencsv', name: 'opencsv', version: '4.1'
+
+    implementation platform('com.google.firebase:firebase-bom:31.5.0')
+    implementation 'com.google.firebase:firebase-firestore'
 }
