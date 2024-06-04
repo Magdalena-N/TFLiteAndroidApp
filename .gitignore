@@ -36,8 +36,12 @@ captures/
 .idea/
 misc.xml
 
+# Keystore files
+*.jks
+*.keystore
+
 # Google Services (e.g. APIs or Firebase)
 google-services.json
 
-app/src/main/assets/dataset
+app/src/main/assets/datasets
 app/src/main/assets/models
