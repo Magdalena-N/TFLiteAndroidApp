@@ -188,6 +188,8 @@ public class TFLiteAndroidTest implements Runnable {
                 ModelResult modelResult = new ModelResult();
 
                 modelResult.round = round;
+                modelResult.batchSize = batchSize;
+                modelResult.delegate = currentDevice;
 
 
                 if (currentDevice == Device.GPU && model.contains("quant")) {

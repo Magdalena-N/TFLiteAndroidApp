@@ -14,5 +14,9 @@ public class ModelResult {
 //    public String inferenceTime = "";
     public int round;
 
+    public int batchSize;
+
+    public TFLiteAndroidTest.Device delegate;
+
     public ArrayList<SingleInferenceResult> results = new ArrayList<>();
 }
