@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory;
 import com.example.tfliteandroidapp.MainActivity;
 import com.example.tfliteandroidapp.R;
 import com.example.tfliteandroidapp.SingleInferenceResult;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.opencsv.CSVWriter;
 
@@ -43,7 +44,7 @@ import java.util.Map;
 
 public class TFLiteAndroidTest implements Runnable {
 
-    private static final int NUMBER_OF_IMAGE_SAMPLES = 250;
+    private static final int NUMBER_OF_IMAGE_SAMPLES = 100;
     private static final int INFERENCES_PER_DATA_SET = 5;
     private static final int MAX_RESULTS = 5;
 
@@ -172,14 +173,9 @@ public class TFLiteAndroidTest implements Runnable {
             e.printStackTrace();
             return;
         }
-//        if (batchSize == 1)
-//            prepareWriter("results_" + modelsDir + "_" + currentDevice + ".csv");
-//        else
-//            prepareWriter("results_" + modelsDir + "_" + currentDevice + "_bs" + batchSize + ".csv");
 
 
         FinalResult finalResult = new FinalResult();
-
 
         for (int round = 0; round < INFERENCES_PER_DATA_SET; round++) {
 
@@ -214,6 +210,8 @@ public class TFLiteAndroidTest implements Runnable {
 
                 for (i = 0; i < images.size(); i += batchSize) {
                     int end = Math.min(i + batchSize, images.size());
+                    if (end - i < batchSize)
+                        break;
                     processImage(images.subList(i, end).toArray());
                     inputBuffer = ByteBuffer.allocate(inputImageBuffers[0].getBuffer().capacity() * batchSize);
 
@@ -239,7 +237,7 @@ public class TFLiteAndroidTest implements Runnable {
                             Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(), (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
                             saveKBestResults(labeledProbability);
                         } else {
-                            saveKDummyResults();
+//                            saveKDummyResults();
                         }
                     } catch (Exception e) {
 //                        saveResult(modelName, dataSetInfo[0], "Model did not complete the inference");
@@ -258,7 +256,7 @@ public class TFLiteAndroidTest implements Runnable {
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
-
+        finalResult.createdAt = FieldValue.serverTimestamp();
         db.collection("prod").document().set(finalResult);
 
         updateUI(UIUpdate.PRINT_MSG, "DONE");
@@ -282,6 +280,7 @@ public class TFLiteAndroidTest implements Runnable {
                 tfliteOptions.addDelegate(nnApiDelegate);
                 break;
             case CPU:
+                tfliteOptions.setNumThreads(1);
                 break;
         }
         try {
@@ -365,7 +364,14 @@ public class TFLiteAndroidTest implements Runnable {
      */
     private List<String> getListOfModels() {
         try {
-            return Arrays.asList(activity.getAssets().list("models/converted_models_batch/" + modelsDir));
+            if (modelsDir.equals("mobilenet_v2")){
+                baseDir = "models/converted_models_batch/";
+                return Arrays.asList(activity.getAssets().list("models/converted_models_batch/" + modelsDir));
+            }
+            else{
+                return Arrays.asList(activity.getAssets().list("models/converted_models_batch/" + modelsDir));
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
