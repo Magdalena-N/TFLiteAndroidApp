@@ -44,14 +44,15 @@ import java.util.Map;
 
 public class TFLiteAndroidTest implements Runnable {
 
-    private static final int NUMBER_OF_IMAGE_SAMPLES = 100;
+    private static final int NUMBER_OF_IMAGE_SAMPLES = 32;
     private static final int INFERENCES_PER_DATA_SET = 5;
     private static final int MAX_RESULTS = 5;
 
     public enum Device {
         CPU,
         NNAPI,
-        GPU
+        GPU,
+        CPU4
     }
 
     public enum UIUpdate {
@@ -136,13 +137,10 @@ public class TFLiteAndroidTest implements Runnable {
 
     public TFLiteAndroidTest(MainActivity pA) {
         activity = pA;
-        currentDevice = Device.CPU;
         gpuDelegate = null;
         nnApiDelegate = null;
         tfliteOptions = new Interpreter.Options();
-        modelsDir = "mobilenet_v1";
-        batchSize = 1;
-        baseDir = "models/";
+        baseDir = "models/converted_models_batch/";
     }
 
     /**
@@ -159,14 +157,7 @@ public class TFLiteAndroidTest implements Runnable {
         String modelName;
         int i, j;
         ByteBuffer inputBuffer;
-        inputImageBuffers = new TensorImage[batchSize];
 
-        models = getListOfModels();
-
-        if (models == null)
-            return;
-
-        dataSets = activity.getResources().getStringArray(R.array.datasets);
         try {
             labels = FileUtil.loadLabels(activity, "labels.txt");
         } catch (IOException e) {
@@ -175,89 +166,107 @@ public class TFLiteAndroidTest implements Runnable {
         }
 
 
-        FinalResult finalResult = new FinalResult();
+        String modelsDirs[] = new String[]{"mobilenet_v1", "mobilenet_v2", "mobilenet_v3"};
+        int batchSizes[] = new int[]{1, 2, 4, 8, 16, 32};
 
-        for (int round = 0; round < INFERENCES_PER_DATA_SET; round++) {
+        for (Device currentDevice : Device.values()) {
 
+            this.currentDevice = currentDevice;
 
-            for (String model : models) {
-                ModelResult modelResult = new ModelResult();
+            for (String modelsDir : modelsDirs) {
 
-                modelResult.round = round;
-                modelResult.batchSize = batchSize;
-                modelResult.delegate = currentDevice;
+                this.modelsDir = modelsDir;
+                models = getListOfModels();
 
-
-                if (currentDevice == Device.GPU && model.contains("quant")) {
-                    updateUI(UIUpdate.PRINT_MSG, "GPU doesn't support quantized models");
-                    continue;
-                }
-                if (model.contains("edgetpu") && batchSize > 1)
-                    continue;
+                if (models == null)
+                    return;
 
 
-                initInterpreter(baseDir + modelsDir + "/" + model);
-                prepareBuffers();
-                modelName = model.replace(".tflite", "");
-                updateUI(UIUpdate.PRINT_MSG, "Model loaded: " + modelName);
+                for (int batchSize : batchSizes) {
+                    FinalResult finalResult = new FinalResult();
+                    this.batchSize = batchSize;
+
+                    inputImageBuffers = new TensorImage[batchSize];
+                    for (int round = 0; round < INFERENCES_PER_DATA_SET; round++) {
+
+                        for (String model : models) {
+                            if (batchSize != 1 && !model.contains("1.0_224")){
+                                continue;
+                            }
+                            ModelResult modelResult = new ModelResult();
+
+                            modelResult.round = round;
+                            modelResult.batchSize = batchSize;
+                            modelResult.delegate = currentDevice;
 
 
-                modelResult.modelName = modelName;
+                            if (currentDevice == Device.GPU && model.contains("quant")) {
+                                updateUI(UIUpdate.PRINT_MSG, "GPU doesn't support quantized models");
+                                continue;
+                            }
+                            if (model.contains("edgetpu") && batchSize > 1)
+                                continue;
+
+                            initInterpreter(baseDir + modelsDir + "/" + model);
+                            prepareBuffers();
+                            modelName = model.replace(".tflite", "");
+                            updateUI(UIUpdate.PRINT_MSG, "Model loaded: " + modelName);
 
 
-                images = getImagesFromDir("datasets/");
-                updateUI(UIUpdate.PRINT_MSG, "DataSet loaded");
+                            modelResult.modelName = modelName;
 
-                for (i = 0; i < images.size(); i += batchSize) {
-                    int end = Math.min(i + batchSize, images.size());
-                    if (end - i < batchSize)
-                        break;
-                    processImage(images.subList(i, end).toArray());
-                    inputBuffer = ByteBuffer.allocate(inputImageBuffers[0].getBuffer().capacity() * batchSize);
 
-                    for (j = 0; j < batchSize; j++)
-                        inputBuffer.put(inputImageBuffers[j].getBuffer());
+                            images = getImagesFromDir("datasets/");
+                            updateUI(UIUpdate.PRINT_MSG, "DataSet loaded");
 
-                    inputBuffer.order(ByteOrder.nativeOrder());
+                            for (i = 0; i < images.size(); i += batchSize) {
+                                int end = Math.min(i + batchSize, images.size());
+                                if (end - i < batchSize)
+                                    break;
+                                processImage(images.subList(i, end).toArray());
+                                inputBuffer = ByteBuffer.allocate(inputImageBuffers[0].getBuffer().capacity() * batchSize);
 
-                    startTime = System.nanoTime();
+                                for (j = 0; j < batchSize; j++)
+                                    inputBuffer.put(inputImageBuffers[j].getBuffer());
 
-                    try {
-                        interpreter.run(inputBuffer, outputProbabilityBuffer.getBuffer().rewind());
-                        endTime = System.nanoTime();
-                        double delta_time = (double) endTime - (double) startTime;
-//                        saveResult(modelName, dataSetInfo[0], Double.toString(delta_time));
-//                            modelResult.label = dataSetInfo[0];
-                        SingleInferenceResult result = new SingleInferenceResult();
-                        result.durationMeasured = delta_time;
-                        modelResult.results.add(result);
+                                inputBuffer.order(ByteOrder.nativeOrder());
 
-                        if (batchSize == 1) {
-                            Map<String, Float> labeledProbability = new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer)).getMapWithFloatValue();
-                            Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(), (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
-                            saveKBestResults(labeledProbability);
-                        } else {
-//                            saveKDummyResults();
+                                startTime = System.nanoTime();
+
+                                try {
+                                    interpreter.run(inputBuffer, outputProbabilityBuffer.getBuffer().rewind());
+                                    endTime = System.nanoTime();
+                                    double delta_time = (double) endTime - (double) startTime;
+                                    SingleInferenceResult result = new SingleInferenceResult();
+                                    result.durationMeasured = delta_time;
+                                    modelResult.results.add(result);
+
+                                    if (batchSize == 1) {
+                                        Map<String, Float> labeledProbability = new TensorLabel(labels, probabilityProcessor.process(outputProbabilityBuffer)).getMapWithFloatValue();
+                                        Map.Entry<String, Float> max = Collections.max(labeledProbability.entrySet(), (Map.Entry<String, Float> e1, Map.Entry<String, Float> e2) -> e1.getValue().compareTo(e2.getValue()));
+//                                        saveKBestResults(labeledProbability);
+                                    } else {
+//                                        saveKDummyResults();
+                                    }
+                                } catch (Exception e) {
+//                                  saveResult(modelName, dataSetInfo[0], "Model did not complete the inference");
+                                    e.printStackTrace();
+                                }
+                            }
+
+
+                            finalResult.modelResults.add(modelResult);
+
                         }
-                    } catch (Exception e) {
-//                        saveResult(modelName, dataSetInfo[0], "Model did not complete the inference");
-                        e.printStackTrace();
+
                     }
+                    finalResult.createdAt = FieldValue.serverTimestamp();
+                    db.collection("prod").document().set(finalResult);
                 }
-
-
-                finalResult.modelResults.add(modelResult);
-
             }
 
         }
-//        try {
-//            csvWriter.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        finalResult.createdAt = FieldValue.serverTimestamp();
-        db.collection("prod").document().set(finalResult);
+
 
         updateUI(UIUpdate.PRINT_MSG, "DONE");
         updateUI(UIUpdate.ENABLE_UI, null);
@@ -281,6 +290,9 @@ public class TFLiteAndroidTest implements Runnable {
                 break;
             case CPU:
                 tfliteOptions.setNumThreads(1);
+                break;
+            case CPU4:
+                tfliteOptions.setNumThreads(4);
                 break;
         }
         try {
@@ -364,13 +376,9 @@ public class TFLiteAndroidTest implements Runnable {
      */
     private List<String> getListOfModels() {
         try {
-            if (modelsDir.equals("mobilenet_v2")){
-                baseDir = "models/converted_models_batch/";
-                return Arrays.asList(activity.getAssets().list("models/converted_models_batch/" + modelsDir));
-            }
-            else{
-                return Arrays.asList(activity.getAssets().list("models/converted_models_batch/" + modelsDir));
-            }
+
+
+            return Arrays.asList(activity.getAssets().list("models/converted_models_batch/" + modelsDir));
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -533,30 +541,25 @@ public class TFLiteAndroidTest implements Runnable {
      * @param inferenceTime time of inference
      */
     private void saveResult(String modelName, String label, String inferenceTime) {
-//        ModelResult results = new ModelResult();
-//        results.modelName = modelName;
-//        results.label = label;
-//        results.inferenceTime = inferenceTime;
-
         String[] str = {modelName, label, inferenceTime, "", ""};
         csvWriter.writeNext(str);
         updateUI(UIUpdate.PRINT_MSG, modelName + " Time: " + inferenceTime + " Label: " + label);
     }
 
-    public void setDevice(Device device) {
-        currentDevice = device;
-    }
-
-    public void setVersion(String v) {
-        modelsDir = v;
-    }
-
-    public void setBatchSize(int bS) {
-        batchSize = bS;
-
-        if (batchSize > 1) baseDir = "models/converted_models_batch/";
-        else baseDir = "models/converted_models_batch/";
-    }
+//    public void setDevice(Device device) {
+//        currentDevice = device;
+//    }
+//
+//    public void setVersion(String v) {
+//        modelsDir = v;
+//    }
+//
+//    public void setBatchSize(int bS) {
+//        batchSize = bS;
+//
+//        if (batchSize > 1) baseDir = "models/converted_models_batch/";
+//        else baseDir = "models/converted_models_batch/";
+//    }
 
     /**
      * Update UI from main thread

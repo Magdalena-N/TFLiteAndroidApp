@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.Spinner;
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         tfLiteAndroidTest = new TFLiteAndroidTest(this);
         deviceSpinner = findViewById(R.id.deviceSpinner);
         deviceSpinner.setOnItemSelectedListener(this);
@@ -42,17 +44,23 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         logs = new ArrayList<String>();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
     public void onItemSelected(AdapterView<?> parent, View view, int pos, long id)
     {
         if (parent == deviceSpinner) {
             Device device = Device.valueOf(parent.getItemAtPosition(pos).toString());
-            tfLiteAndroidTest.setDevice(device);
+//            tfLiteAndroidTest.setDevice(device);
         } else if (parent == versionSpinner) {
             String version = parent.getItemAtPosition(pos).toString();
-            tfLiteAndroidTest.setVersion(version);
+//            tfLiteAndroidTest.setVersion(version);
         } else if (parent == batchSizeSpinner) {
             String batchSize = parent.getItemAtPosition(pos).toString();
-            tfLiteAndroidTest.setBatchSize(Integer.parseInt(batchSize));
+//            tfLiteAndroidTest.setBatchSize(Integer.parseInt(batchSize));
         }
 
     }
@@ -67,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         deviceSpinner.setEnabled(false);
         versionSpinner.setEnabled(false);
         startButton.setEnabled(false);
+        batchSizeSpinner.setEnabled(false);
         updateLogs("Tests start");
         tfLiteThread = new Thread(tfLiteAndroidTest);
         tfLiteThread.start();
@@ -77,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         deviceSpinner.setEnabled(true);
         versionSpinner.setEnabled(true);
         startButton.setEnabled(true);
+        batchSizeSpinner.setEnabled(true);
     }
 
     public void updateLogs(String log)
